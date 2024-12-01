@@ -1,4 +1,4 @@
-﻿#Connect to Graph
+#Connect to Graph
 Connect-MgGraph -Scopes "AuditLog.Read.All" -NoWelcome
 
 
@@ -100,14 +100,15 @@ Write-Host "Show and Export Successful logins from users outside the allowed cou
 Write-Host "GeoSentinel -s -t 1 -v -o 'C:\temp\Sussessful_hour.csv'"-ForegroundColor Yellow
 break
 }
+
+
+#SUB FUNCTIONS
 function WY($text){
 Write-Host $text -NoNewline -ForegroundColor Yellow
 }
 function WG($text){
 Write-Host $text -NoNewline -ForegroundColor Gray
 }
-
-#LOGIC FUNCTIONS
 function Get-CustomDate {
     param (
         [int]$days = 0,  # Changed to [int] to ensure proper numerical operations
@@ -128,7 +129,79 @@ function Get-CustomHour {
     $to = $InputDate.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
     return @($from, $to)
 }
+#---DEBUG FUnctions
+function debug-LoginStatus {
+$uri = "https://graph.microsoft.com/v1.0/auditLogs/signIns?$filter=createdDateTime ge 2024-11-30T19:42:49Z and createdDateTime le 2024-12-01T01:42:49Z with 0-byte payload"
+$res = Invoke-MgGraphRequest -Method Get $uri
+$res1 = $res.value
+    forEach($r in $res1){
+    $country       = $r.location.countryOrRegion
+    $city          = $r.location.city
+    $loginMethod   = $r.clientAppUsed 
+    $app           = $r.appDisplayName
+    $resourceName  = $r.resourceDisplayName
+    $isInteractive = $r.isInteractive
+        if($isInteractive -eq "TRUE"){$isInteractive = "Interactive sign-in"}else{$isInteractive = "Not interactive sing-in"}
+    $ip            = $r.ipAddress
+    $user          = $r.userDisplayName
+    $email         = $r.userPrincipalName
+    $device        = $r.deviceDetail.displayName
+    $timeLogin     = $r.createdDateTime
+    $failureCode   = $r.status.errorCode
+        if($failureCode -eq 0){$signinStatus = "SUCCESS"}else{$signinStatus = "FAILED"}
 
+        Write-Debug $email
+        $record = New-Object -TypeName PSObject -Property @{
+        Email           = $email
+        Device          = $device
+        Country         = $country
+        City            = $city
+        IP              = $ip
+        Time            = $timeLogin 
+        LoginMethod     = $loginMethod
+        App             = $app
+        AppResourceName = $resourceName
+        IsInteractive   = $isInteractive
+        SignInStatus    = $signinStatus
+        SignInCode      = $failureCode
+        FailureDetails  = $failureDetails
+        FailureReason   = $failureReason
+
+        }
+ 
+        
+         if($country -notin $allowedCountries -and $failureCode -eq 0 -and $email -notin $outOfScopeUsers){
+            Write-Host "$signinStatus" -ForegroundColor Cyan
+            WG "[$timeLogin] Suspicious login for $email from:$country $city" ;WY "[$ip]";  WG "App:";  WY "$app`n" -ForegroundColor Yellow 
+            Write-Verbose "$loginMethod  using $app ($resourceName) - Interactive login : $isInteractive"
+            Write-Verbose "Device : $device"
+            Write-Verbose "Reason: $failureDetails"
+            Write-Host    "Failure Code: $failureCode"
+            Write-Host "`n-------------------"
+            $global:SuccessusersArray += $record
+            $success = $global:SuccessusersArray.Email | Sort-Object -Unique | Measure-Object
+            $successCount = $success.Count
+       
+        elseif($country -notin $allowedCountries -and $failureCode -ne 0 -and $email -notin $outOfScopeUsers){
+            Write-Host "$signinStatus" -ForegroundColor Red
+            WG "[$timeLogin] Suspicious login for $email from:$country $city" ;WY "[$ip]";  WG "App:";  WY "$app`n" -ForegroundColor Yellow 
+            Write-Verbose "$loginMethod  using $app ($resourceName) - Interactive login : $isInteractive"
+            Write-Verbose "Device : $device"
+            Write-Verbose "Reason: $failureDetails"
+            Write-Host    "Failure Code: $failureCode"
+            Write-Host "`n-------------------"
+            $global:FailedUsersArray += $record
+            $failed = $global:FailedUsersArray.Email | Sort-Object -Unique | Measure-Object
+            $failedCount = $failed.Count 
+        }
+    }
+}
+}
+# ----------
+
+
+
+#LOGIC FUNCTION
 function fetchLoginData{
 [CmdletBinding(SupportsShouldProcess=$true)]
 param(
@@ -237,7 +310,6 @@ if($d){$days = $d}
 } #cls fetchLoginData
 
 #---- MAIN FUNCTION --------
-
 function GeoSentinel{
 [CmdletBinding(SupportsShouldProcess=$true)]
 param(

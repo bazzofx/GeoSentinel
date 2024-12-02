@@ -48,7 +48,7 @@ This script is ideal for configuring as a scheduled task to run at regular inter
 
 Load the script into your PowerShell session:
 
-    import-module .\GeoSentinel.ps1
+    import-module .\Module\GeoSentinel.psm1
 
 ### Parameters
 

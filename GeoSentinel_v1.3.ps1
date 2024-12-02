@@ -1,13 +1,17 @@
 #Connect to Graph
 Connect-MgGraph -Scopes "AuditLog.Read.All" -NoWelcome
+$scriptPath = $MyInvocation.MyCommand.Path
+$wd= [System.IO.Path]::GetDirectoryName($scriptPath)
 
 
 $version = "GeoSentinel - Version 1.1 - by PB 30/11/24"
 <#ChangeLog
 v1.1 - Changed default to be last logs from last 1 hour, if not flags are used, if both -t and -d flags are used [error] msg shows.
+v1.2 - Added new -out | -o flags and new banner
 #>
 $allowedCountries =@("IN","AU","IE","GB","IN","NZ")
-#$allowedCountries =@("BR")
+
+#$allowedCountries =@("BR") #debug
 $outOfScopeUsers = @("d8f30f13-21d4-42bb-af1e-d2a3b5c0ec2d")
 $global:SuccessusersArray = @()
 $global:FailedUsersArray = @()
@@ -129,6 +133,36 @@ function Get-CustomHour {
     $to = $InputDate.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
     return @($from, $to)
 }
+function CodeToCountry($code){
+$data = Import-Csv "$wd\data\countries_code.csv" -Header "Countries","Code"
+
+forEach($x in $data){
+$countryName  = $x.Countries
+$countryCode  = $x.Code
+
+
+    if($code -eq $countryCode){
+        #Write-Host "Code :$inputCode" -ForegroundColor Magenta
+       # Write-Host "CountryName : $countryName" -ForegroundColor Magenta
+        $obj = [PsCustomobject]@{
+        CountryName = "$countryName"
+        countryCode = "$countryCode"
+    }#cls custom Object
+        break
+        }#cls if
+    
+
+    }#cls forEach
+
+$cName = $obj.CountryName
+#Write-Host "Country Name is $Cname" -ForegroundColor Yellow
+#Write-Host "END" -ForegroundColor Magenta
+
+return $cName
+
+
+
+}
 #---DEBUG FUnctions
 function debug-LoginStatus {
 $uri = "https://graph.microsoft.com/v1.0/auditLogs/signIns?$filter=createdDateTime ge 2024-11-30T19:42:49Z and createdDateTime le 2024-12-01T01:42:49Z with 0-byte payload"
@@ -200,7 +234,6 @@ $res1 = $res.value
 # ----------
 
 
-
 #LOGIC FUNCTION
 function fetchLoginData{
 [CmdletBinding(SupportsShouldProcess=$true)]
@@ -221,6 +254,7 @@ if($d){$days = $d}
 
     forEach($r in $res1){
     $country       = $r.location.countryOrRegion
+        $Cname = CodeToCountry -code $country # convert Country Code to CountryName
     $city          = $r.location.city
     $loginMethod   = $r.clientAppUsed 
     $app           = $r.appDisplayName
@@ -242,6 +276,7 @@ if($d){$days = $d}
         Email           = $email
         Device          = $device
         Country         = $country
+        CountryName     = $Cname
         City            = $city
         IP              = $ip
         Time            = $timeLogin 
@@ -265,7 +300,7 @@ if($d){$days = $d}
  if($successfulLogs -eq $true){
 
          if($country -notin $allowedCountries -and $failureCode -eq 0 -and $email -notin $outOfScopeUsers){
-            Write-Host "$signinStatus to sign-in" -ForegroundColor Red
+            Write-Host "$signinStatus SUSPICIOUS SIGN IN FROM $Cname" -ForegroundColor Green
             WG "[$timeLogin] Suspicious login for "; WY $email;WG " from: "; WY "$country $city" ;WY " [$ip] ";  WG "App:";  WY " $app`n" -ForegroundColor Yellow 
             Write-Verbose "$loginMethod  using $app ($resourceName) - Interactive login : $isInteractive"
             Write-Verbose "Device : $device"
@@ -280,7 +315,7 @@ if($d){$days = $d}
  elseif($failedLogs -eq $true){
             
          if($country -notin $allowedCountries -and $failureCode -ne 0 -and $email -notin $outOfScopeUsers){
-            Write-Host "$signinStatus to sign-in" -ForegroundColor Magenta
+            Write-Host "$signinStatus SUSPICIOUS SIGN IN FROM $Cname" -ForegroundColor DarkYellow
             WG "[$timeLogin] Suspicious login for "; WY $email;WG " from: "; WY "$country $city" ;WY " [$ip] ";  WG "App:";  WY " $app`n" -ForegroundColor Yellow 
             Write-Verbose "$loginMethod  using $app ($resourceName) - Interactive login : $isInteractive"
             Write-Verbose "Device : $device"
@@ -293,8 +328,8 @@ if($d){$days = $d}
                 }
             }
  else{
-            Write-Host "Exception fell under default..."
-            Write-Host "$signinStatus to  sign-in" -ForegroundColor Red
+         if($country -notin $allowedCountries -and $failureCode -eq 0 -and $email -notin $outOfScopeUsers){
+            Write-Host "$signinStatus SUSPICIOUS SIGN IN FROM $Cname" -ForegroundColor Green
             WG "[$timeLogin] Suspicious login for "; WY $email;WG " from: "; WY "$country $city" ;WY " [$ip] ";  WG "App:";  WY " $app`n" -ForegroundColor Yellow 
             Write-Verbose "$loginMethod  using $app ($resourceName) - Interactive login : $isInteractive"
             Write-Verbose "Device : $device"
@@ -304,7 +339,8 @@ if($d){$days = $d}
             $global:SuccessusersArray += $record
             $success = $global:SuccessusersArray.Email | Sort-Object -Unique | Measure-Object
             $successCount = $success.Count
-             }
+                }
+                 }
       } #cls --- forEach
 
 } #cls fetchLoginData
@@ -401,9 +437,9 @@ $uri = "https://graph.microsoft.com/v1.0/auditLogs/signIns?`$filter=createdDateT
 #Write-Host $uri -ForegroundColor Magenta
 #sleep -Seconds 10 # debug sleep here -------------------------------------------< DEBUG HERE >
 
+#----------------------- MAIN FUNCTION ----------------------------
 
 $res = Invoke-MgGraphRequest -Method Get $uri
-sleep 12
 $res1 = $res.value
 $nextLink = $res.'@odata.nextLink'
 
@@ -432,11 +468,12 @@ if($nextLink){
         if(!($nextLink)){break} #if there isnt a next page break out of WhileLoop
     }
 }
+#----------------------- MAIN FUNCTION END ----------------------------
 
 if($outPath -ne ""){
     Try{
        if($failedLogs){
-          Write-Host "[INFO] - Exporting Successful Logs from Countries outside the Allowed List" -ForegroundColor Gray
+          Write-Host "[INFO] - Exporting Failed Logs from Countries outside the Allowed List" -ForegroundColor Gray
           $failedLogsFile = "Failed_" + $outPath
           $global:FailedUsersArray | Export-Csv $failedLogsFile -NoTypeInformation   
             }
@@ -450,11 +487,14 @@ if($outPath -ne ""){
     Catch{Write-Host "[ERROR] - Could not export results to $outPath" -ForegroundColor Red}
     } #cls flag if -o
 
+#-- Get Unique users count by flag used
 if($successfulLogs){
     $userResult = $global:SuccessusersArray.Email | sort -Unique |Measure-Object
 }
-else{
+elseif($failedLogs){
     $userResult = $global:FailedUsersArray.Email | sort -Unique |Measure-Object}
+else{$userResult = $global:SuccessusersArray.Email | sort -Unique |Measure-Object}
+
 $count = $userResult.Count
 
 if($count -eq 1){banner -patrolmsg "FETCHED COMPLETED!`n                                      $count USER WITH SUSPICIOUS LOGIN!" -color Cyan}

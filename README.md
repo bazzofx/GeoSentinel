@@ -9,18 +9,17 @@ This script is ideal for configuring as a scheduled task to run at regular inter
 - **Filter Logs by Time and Date**:
 
     - Specify a custom time range in hours or days.
-    - Avoid overlapping filters with clear flag validations.
 - **Analyze Sign-In Data**:
 
     - Classifies logins as `SUCCESSFUL` or `FAILED`.
     - Highlights logins from untrusted countries.
     - Differentiates between interactive and non-interactive sign-ins.
 - **Customizable Parameters**:
-
+- 
     - Search successful or failed logins with appropriate flags.
     - Specify output file paths to export results.
 - **Suspicious Login Detection**:
-
+- 
     - Detects and highlights logins from unapproved countries or devices.
     - Provides detailed login metadata for further analysis.
 

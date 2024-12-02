@@ -4,12 +4,12 @@ $scriptPath = $MyInvocation.MyCommand.Path
 $wd= [System.IO.Path]::GetDirectoryName($scriptPath)
 
 
-$version = "GeoSentinel - Version 1.1 - by PB 30/11/24"
+$version = "GeoSentinel - Version 1.0 - by PB 01/12/24"
 <#ChangeLog
 v1.1 - Changed default to be last logs from last 1 hour, if not flags are used, if both -t and -d flags are used [error] msg shows.
 v1.2 - Added new -out | -o flags and new banner
 #>
-$allowedCountries =@("IN","AU","IE","GB","IN","NZ")
+$allowedCountries =@("US","GB")
 
 #$allowedCountries =@("BR") #debug
 $outOfScopeUsers = @("d8f30f13-21d4-42bb-af1e-d2a3b5c0ec2d")

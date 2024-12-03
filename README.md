@@ -21,7 +21,7 @@
 ```
 
 
-# GeoSentinel PowerShell Script
+# GeoSentinel
 
 **GeoSentinel** is a PowerShell module designed to enhance the security of your Azure account by detecting and flagging suspicious sign-in activities. It identifies both successful logins and failed sign-in attempts originating from countries not included in your predefined `$allowedCountries` list. This approach helps you monitor unauthorized access and focus only on the logs you care about, helping you redue noise and speed up defenses. 
 This script is ideal for configuring as a scheduled task to run at regular intervals (e.g: every hour). It allows you to receive timely notifications whenever a suspicious successful sign-in event is detected, enabling quick responses to potential security threats.

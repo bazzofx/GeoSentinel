@@ -1,3 +1,26 @@
+ 
+    *
+   .                                   You can't login from there Sir!
+    <\    *        .       __        /
+     \\                 .~~  ~~.    /           .
+ .    \\     .         /|~|     |  /  .
+       \\             /======\  |           *
+      //\\           |>/_\_<_=' |       .         *
+  *   ~\  \  .    *  `-`__  \\__|    _
+     <<\ \ \    ___    \..'  `--'   / ~-.
+    <<\\' )_) .+++++ _ (___.--'| _ /~-.  ~-.
+    \_\' /   x||||||| `-._    _.' /~-. ~-.  ``.
+     |   |  |X++++++|     \  /   /~-. ~-. ~-./
+ .   |   `. .||||||||       []   /~-. ~-. ~-./
+     |    |'  ++++++| :::  [] : `-. ~-. ~-.'
+     |    ``.       '  :::  []:: _.-:-. ~-/ |
+*    (_   /|     _.        []  |GEO|`-'  |
+     ||`-'| |_.-' |         |\\/|SENTINEL|  ``.
+  .   `.___.-'     `.        ||`'  \~~~/ >.  l
+
+
+
+
 # GeoSentinel PowerShell Script
 
 **GeoSentinel** is a PowerShell module designed to enhance the security of your Azure account by detecting and flagging suspicious sign-in activities. It identifies both successful logins and failed sign-in attempts originating from countries not included in your predefined `$allowedCountries` list. This approach helps you monitor unauthorized access and focus only on the logs you care about, helping you redue noise and speed up defenses. 

@@ -38,6 +38,7 @@ This script is ideal for configuring as a scheduled task to run at regular inter
 
        Install-Module Microsoft.Graph -Scope CurrentUser
 2. Run the install.ps1  script to move the GeoSentinel module to your  `$env:PsModulePath`
+
         ./install.ps1
 * * *
 

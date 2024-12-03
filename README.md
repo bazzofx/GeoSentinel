@@ -37,9 +37,8 @@ This script is ideal for configuring as a scheduled task to run at regular inter
 1. Install the Microsoft Graph PowerShell SDK:
 
        Install-Module Microsoft.Graph -Scope CurrentUser
-2. Clone or download the script file to your system.
-
-        import-module .\GeoSentinel.ps1
+2. Run the install.ps1  script to move the GeoSentinel module to your  `$env:PsModulePath`
+        ./install.ps1
 * * *
 
 ## Usage
